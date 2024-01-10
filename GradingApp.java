@@ -21,7 +21,7 @@ public class GradingApp extends JFrame {
     private DefaultTableModel tableModel;
 
     private Connection connection;
-    private String jdbcURL = "jdbc:mariadb://localhost:3306/grade";
+    private String jdbcURL = "jdbc:mysql://localhost:3306/grade";
     private String username = "root";
     private String password = "alexis";
 
@@ -408,7 +408,7 @@ public class GradingApp extends JFrame {
 
     private boolean isValidName(String name) {
         // Use regex to check if the name contains only alphabets
-        return name.matches("^[a-zA-Z]+$");
+        return ((name.matches("^[a-zA-Z]+$")) || (name.contains(" ")));
     }
 
     private boolean isValidGrade(String grade) {
