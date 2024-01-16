@@ -1,4 +1,8 @@
 /*
+CREATE DATABASE grading_system;
+
+USE grading_system;
+
 CREATE TABLE teachers (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(255) NOT NULL,
@@ -10,15 +14,15 @@ CREATE TABLE students (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
-    im211 INT DEFAULT 99,
-    cc214 INT DEFAULT 99,
-    ms121 INT DEFAULT 99,
-    pe3 INT DEFAULT 99,
-    ge105 INT DEFAULT 99,
-    ge106 INT DEFAULT 99,
-    net212 INT DEFAULT 99,
-    itelectv INT DEFAULT 99,
-    gensoc INT DEFAULT 99,
+    IM211 INT DEFAULT 99,
+    CC214 INT DEFAULT 99,
+    MS121 INT DEFAULT 99,
+    PE3 INT DEFAULT 99,
+    GE105 INT DEFAULT 99,
+    GE106 INT DEFAULT 99,
+    NET212 INT DEFAULT 99,
+    ITELECTV INT DEFAULT 99,
+    GENSOC INT DEFAULT 99,
     average_grade INT DEFAULT 99,
     status VARCHAR(255) DEFAULT 'Passed'
 );
@@ -480,15 +484,15 @@ public class GradingSystem {
                 Object[] rowData = {
                         resultSet.getInt("id"),
                         resultSet.getString("name"),
-                        resultSet.getInt("im211"),
-                        resultSet.getInt("cc214"),
-                        resultSet.getInt("ms121"),
-                        resultSet.getInt("pe3"),
-                        resultSet.getInt("ge105"),
-                        resultSet.getInt("ge106"),
-                        resultSet.getInt("net212"),
-                        resultSet.getInt("itelectv"),
-                        resultSet.getInt("gensoc"),
+                        resultSet.getInt("IM211"),
+                        resultSet.getInt("CC214"),
+                        resultSet.getInt("MS121"),
+                        resultSet.getInt("PE3"),
+                        resultSet.getInt("GE105"),
+                        resultSet.getInt("GE106"),
+                        resultSet.getInt("NET212"),
+                        resultSet.getInt("ITELECTV"),
+                        resultSet.getInt("GENSOC"),
                         resultSet.getInt("average_grade"),
                         resultSet.getString("status")
                 };
@@ -555,21 +559,26 @@ public class GradingSystem {
                                 ge105Field, ge106Field, net212Field, itelectvField, gensocField));
 
                 ArrayList<String> subjectCodes = new ArrayList<>(
-                        Arrays.asList("im211", "cc214", "ms121", "pe3", "ge105", "ge106", "net212", "itelectv",
-                                "gensoc"));
+                        Arrays.asList("IM211", "CC214", "MS121", "PE3", "GE105", "GE106", "NET212", "ITELECTV",
+                                "GENSOC"));
 
                 int totalSubjects = gradeFields.size();
-                int sumOfGrades = 0;
 
                 for (int i = 0; i < gradeFields.size(); i++) {
-                    gradeFields.get(i).setText(String.valueOf(resultSet.getInt(subjectCodes.get(i))));
-                    gradeFields.get(i)
-                            .setEnabled(selectedSubject != null && selectedSubject.equalsIgnoreCase(getSubjectCode(i)));
-                    panel.add(new JLabel(getSubjectCode(i) + ":"));
-                    panel.add(gradeFields.get(i));
+                    boolean isSelectedSubject = selectedSubject != null
+                            && selectedSubject.equalsIgnoreCase(getSubjectCode(i));
 
-                    int grade = Integer.parseInt(gradeFields.get(i).getText());
-                    sumOfGrades += grade;
+                    if (isSelectedSubject) {
+                        gradeFields.get(i).setText(String.valueOf(resultSet.getInt(subjectCodes.get(i))));
+                        gradeFields.get(i).setEnabled(true);
+                        gradeFields.get(i).setVisible(true);
+
+                        panel.add(new JLabel(getSubjectCode(i) + ":"));
+                        panel.add(gradeFields.get(i));
+                    } else {
+                        gradeFields.get(i).setText(String.valueOf(resultSet.getInt(subjectCodes.get(i))));
+                        gradeFields.get(i).setVisible(false);
+                    }
                 }
 
                 int result = JOptionPane.showConfirmDialog(frame, panel, "Edit Student", JOptionPane.OK_CANCEL_OPTION);
@@ -584,11 +593,12 @@ public class GradingSystem {
                     int net212 = Integer.parseInt(net212Field.getText());
                     int itelectv = Integer.parseInt(itelectvField.getText());
                     int gensoc = Integer.parseInt(gensocField.getText());
-                    int averageGrade = sumOfGrades / totalSubjects;
+                    int averageGrade = (im211 + cc214 + ms121 + pe3 + ge105 + ge106 + net212 + itelectv + gensoc)
+                            / totalSubjects;
                     String status = (averageGrade < 75) ? "Failed" : "Passed";
 
                     PreparedStatement preparedStatement = connection.prepareStatement(
-                            "UPDATE students SET im211 = ?, cc214 = ?, ms121 = ?, pe3 = ?, ge105 = ?, ge106 = ?, net212 = ?, itelectv = ?, gensoc = ?, average_grade = ?, status = ? WHERE id = ?");
+                            "UPDATE students SET IM211 = ?, CC214 = ?, MS121 = ?, PE3 = ?, GE105 = ?, GE106 = ?, NET212 = ?, ITELECTV = ?, GENSOC = ?, average_grade = ?, status = ? WHERE id = ?");
                     preparedStatement.setInt(1, im211);
                     preparedStatement.setInt(2, cc214);
                     preparedStatement.setInt(3, ms121);
@@ -710,7 +720,7 @@ public class GradingSystem {
     }
 
     private String getSubjectCode(int index) {
-        String[] subjectCodes = { "im211", "cc214", "ms121", "pe3", "ge105", "ge106", "net212", "itelectv", "gensoc" };
+        String[] subjectCodes = { "IM211", "CC214", "MS121", "PE3", "GE105", "GE106", "NET212", "ITELECTV", "GENSOC" };
         return subjectCodes[index];
     }
 
