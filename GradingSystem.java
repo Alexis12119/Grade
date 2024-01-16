@@ -130,7 +130,8 @@ public class GradingSystem {
                 }
             }
 
-            JOptionPane.showMessageDialog(frame, "Invalid credentials", "Login Failed", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(frame, "Incorrect username or password", "Login Failed",
+                    JOptionPane.ERROR_MESSAGE);
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -290,15 +291,75 @@ public class GradingSystem {
         registerDialog.setVisible(true);
     }
 
+    private void searchStudentsByName(String query, JTable table) {
+        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() {
+                try {
+                    String selectedSubject = getTeacherSubject();
+                    String searchQuery = "SELECT id, name, " + selectedSubject + " FROM students WHERE name LIKE ?";
+                    PreparedStatement searchStatement = connection.prepareStatement(searchQuery);
+                    searchStatement.setString(1, "%" + query + "%");
+
+                    ResultSet resultSet = searchStatement.executeQuery();
+
+                    String[] columnNames = { "ID", "Name", selectedSubject };
+                    DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
+                        @Override
+                        public boolean isCellEditable(int row, int column) {
+                            return false; // Make the table not editable
+                        }
+                    };
+
+                    while (resultSet.next()) {
+                        Object[] rowData = {
+                                resultSet.getInt("id"),
+                                resultSet.getString("name"),
+                                resultSet.getInt(selectedSubject.toLowerCase()),
+                        };
+                        tableModel.addRow(rowData);
+                    }
+
+                    // Update the table model on the event dispatch thread
+                    SwingUtilities.invokeLater(() -> table.setModel(tableModel));
+
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+        };
+
+        // Execute the SwingWorker
+        worker.execute();
+    }
+
+    private JTable createTable(DefaultTableModel tableModel) {
+        JTable table = new JTable(tableModel) {
+            @Override
+            public boolean getScrollableTracksViewportWidth() {
+                return getPreferredSize().width < getParent().getWidth();
+            }
+        };
+
+        table.getTableHeader().setReorderingAllowed(false); // Disable column rearrangement
+        int[] columnWidths = { 50, 100, 60 };
+        for (int i = 0; i < columnWidths.length; i++) {
+            table.getColumnModel().getColumn(i).setPreferredWidth(columnWidths[i]);
+        }
+
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        return table;
+    }
+
     private void showTeacherDashboard() {
         frame.getContentPane().removeAll();
         frame.repaint();
         frame.setLocationRelativeTo(null);
+
         try {
             String selectedSubject = getTeacherSubject();
-            ResultSet resultSet;
-            resultSet = statement
-                    .executeQuery("SELECT id, name, " + selectedSubject + " FROM students");
+            ResultSet resultSet = statement.executeQuery("SELECT id, name, " + selectedSubject + " FROM students");
 
             // Create a table to display student information
             String[] columnNames = { "ID", "Name", selectedSubject };
@@ -317,25 +378,21 @@ public class GradingSystem {
                 };
                 tableModel.addRow(rowData);
             }
-            JTable table = new JTable(tableModel) {
-                @Override
-                public boolean getScrollableTracksViewportWidth() {
-                    return getPreferredSize().width < getParent().getWidth();
-                }
-            };
 
-            table.getTableHeader().setReorderingAllowed(false); // Disable column rearrangement
-            int[] columnWidths = { 50, 100, 60 };
-            for (int i = 0; i < columnWidths.length; i++) {
-                table.getColumnModel().getColumn(i).setPreferredWidth(columnWidths[i]);
-            }
+            JTable table = createTable(tableModel);
 
-            // Wrap the table in a JScrollPane to enable horizontal scrolling
             JScrollPane scrollPane = new JScrollPane(table);
             table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-            JPanel buttonPanel = new JPanel();
+            JPanel searchPanel = new JPanel();
+            JTextField searchField = new JTextField(20);
+            JButton searchButton = new JButton("Search");
+            searchButton.addActionListener(e -> searchStudentsByName(searchField.getText(), table));
+            searchPanel.add(new JLabel("Search by Name:"));
+            searchPanel.add(searchField);
+            searchPanel.add(searchButton);
 
+            JPanel buttonPanel = new JPanel();
             JButton logoutButton = new JButton("Logout");
             logoutButton.addActionListener(e -> logout());
             buttonPanel.add(logoutButton);
@@ -352,105 +409,15 @@ public class GradingSystem {
             JButton deleteAccountButton = new JButton("Delete Account");
             deleteAccountButton.addActionListener(e -> deleteTeacherAccount());
             buttonPanel.add(deleteAccountButton);
-
-            JTextField searchField = new JTextField(20);
-            JButton searchButton = new JButton("Search");
-            searchButton.addActionListener(e -> searchStudentsByName(searchField.getText()));
-            buttonPanel.add(new JLabel("Search by Name:"));
-            buttonPanel.add(searchField);
-            buttonPanel.add(searchButton);
 
             frame.setLayout(new BorderLayout());
+            frame.add(searchPanel, BorderLayout.NORTH);
             frame.add(scrollPane, BorderLayout.CENTER);
             frame.add(buttonPanel, BorderLayout.SOUTH);
             frame.pack();
             frame.setSize(800, 600);
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void searchStudentsByName(String query) {
-        try {
-            String selectedSubject = getTeacherSubject();
-            String searchQuery = "SELECT id, name, " + selectedSubject + " FROM students WHERE name LIKE ?";
-            PreparedStatement searchStatement = connection.prepareStatement(searchQuery);
-            searchStatement.setString(1, "%" + query + "%");
-
-            ResultSet resultSet = searchStatement.executeQuery();
-
-            // Create a table to display search results
-            String[] columnNames = { "ID", "Name", selectedSubject };
-            DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
-                @Override
-                public boolean isCellEditable(int row, int column) {
-                    return false; // Make the table not editable
-                }
-            };
-
-            while (resultSet.next()) {
-                Object[] rowData = {
-                        resultSet.getInt("id"),
-                        resultSet.getString("name"),
-                        resultSet.getInt(selectedSubject.toLowerCase()),
-                };
-                tableModel.addRow(rowData);
-            }
-
-            JTable table = new JTable(tableModel) {
-                @Override
-                public boolean getScrollableTracksViewportWidth() {
-                    return getPreferredSize().width < getParent().getWidth();
-                }
-            };
-
-            table.getTableHeader().setReorderingAllowed(false); // Disable column rearrangement
-            int[] columnWidths = { 50, 100, 60 };
-            for (int i = 0; i < columnWidths.length; i++) {
-                table.getColumnModel().getColumn(i).setPreferredWidth(columnWidths[i]);
-            }
-
-            // Wrap the table in a JScrollPane to enable horizontal scrolling
-            JScrollPane scrollPane = new JScrollPane(table);
-            table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-            JPanel buttonPanel = new JPanel();
-
-            JButton logoutButton = new JButton("Logout");
-            logoutButton.addActionListener(e -> logout());
-            buttonPanel.add(logoutButton);
-
-            JButton editButton = new JButton("Edit Student");
-            editButton.addActionListener(e -> {
-                int selectedRow = table.getSelectedRow();
-                if (selectedRow != -1) {
-                    editStudent((int) table.getValueAt(selectedRow, 0));
-                }
-            });
-
-            buttonPanel.add(editButton);
-            JButton deleteAccountButton = new JButton("Delete Account");
-            deleteAccountButton.addActionListener(e -> deleteTeacherAccount());
-            buttonPanel.add(deleteAccountButton);
-
-            JTextField searchField = new JTextField(20);
-            JButton searchButton = new JButton("Search");
-            searchButton.addActionListener(e -> searchStudentsByName(searchField.getText()));
-            buttonPanel.add(new JLabel("Search by Name:"));
-            buttonPanel.add(searchField);
-            buttonPanel.add(searchButton);
-
-            frame.getContentPane().removeAll();
-            frame.add(scrollPane, BorderLayout.CENTER);
-            frame.add(buttonPanel, BorderLayout.SOUTH);
-            frame.repaint();
-            frame.pack();
-            frame.setSize(800, 600);
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -466,7 +433,6 @@ public class GradingSystem {
             resultSet = statement
                     .executeQuery("SELECT * FROM students WHERE name = '" + nameField.getText() + "'");
 
-            // Create a table to display student information
             String[] columnNames = { "ID", "Name", "IM211", "CC214", "MS121", "PE3", "GE105", "GE106", "NET212",
                     "ITELECTV", "GENSOC", "Average Grade", "Status" };
             DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
