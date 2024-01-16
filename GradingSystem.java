@@ -186,6 +186,12 @@ public class GradingSystem {
                 return;
             }
 
+            if (isInvalidName(name)) {
+                JOptionPane.showMessageDialog(frame, "Name must only contain letters", "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             PreparedStatement preparedStatement;
             if ("Student".equals(userType)) {
                 preparedStatement = connection.prepareStatement(
@@ -656,6 +662,11 @@ public class GradingSystem {
 
     private boolean isValidGradeRange(double grade) {
         return grade >= 50 && grade <= 100;
+    }
+
+    private boolean isInvalidName(String name) {
+        // Use regex to check if the name contains only alphabets
+        return !((name.matches("^[a-zA-Z]+$")) || (name.contains(" ")));
     }
 
     private String getTeacherSubject() throws SQLException {
