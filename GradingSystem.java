@@ -115,11 +115,11 @@ public class GradingSystem {
     }
 
     private void login() {
-        String username = nameField.getText();
+        String name = nameField.getText();
         String password = new String(passwordField.getPassword());
 
-        if (username.isEmpty() || password.isEmpty()) {
-            JOptionPane.showMessageDialog(frame, "Please enter both username and password", "Error",
+        if (name.isEmpty() || password.isEmpty()) {
+            JOptionPane.showMessageDialog(frame, "Please enter both name and password", "Error",
                     JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -131,7 +131,7 @@ public class GradingSystem {
             if ("Teacher".equals(selectedUserType)) {
                 PreparedStatement teacherStatement = connection.prepareStatement(
                         "SELECT * FROM teachers WHERE name = ? AND password = ?");
-                teacherStatement.setString(1, username);
+                teacherStatement.setString(1, name);
                 teacherStatement.setString(2, password);
 
                 ResultSet teacherResultSet = teacherStatement.executeQuery();
@@ -146,7 +146,7 @@ public class GradingSystem {
             else if ("Student".equals(selectedUserType)) {
                 PreparedStatement studentStatement = connection.prepareStatement(
                         "SELECT * FROM students WHERE name = ? AND password = ?");
-                studentStatement.setString(1, username);
+                studentStatement.setString(1, name);
                 studentStatement.setString(2, password);
 
                 ResultSet studentResultSet = studentStatement.executeQuery();
@@ -158,7 +158,7 @@ public class GradingSystem {
                 }
             }
 
-            JOptionPane.showMessageDialog(frame, "Incorrect username or password", "Login Failed",
+            JOptionPane.showMessageDialog(frame, "Incorrect name or password", "Login Failed",
                     JOptionPane.ERROR_MESSAGE);
 
         } catch (SQLException e) {
@@ -167,11 +167,11 @@ public class GradingSystem {
     }
 
     private void register() {
-        String username = nameField.getText();
+        String name = nameField.getText();
         String password = new String(passwordField.getPassword());
 
-        if (username.isEmpty() || password.isEmpty()) {
-            JOptionPane.showMessageDialog(frame, "Please enter both username and password", "Error",
+        if (name.isEmpty() || password.isEmpty()) {
+            JOptionPane.showMessageDialog(frame, "Please enter both name and password", "Error",
                     JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -179,9 +179,9 @@ public class GradingSystem {
         String userType = (String) userTypeDropdown.getSelectedItem();
 
         try {
-            // Check if the username already exists
-            if (isUsernameExists(username, userType)) {
-                JOptionPane.showMessageDialog(frame, "Username already exists, please choose another one", "Error",
+            // Check if the name already exists
+            if (isNameAlreadyExists(name, userType)) {
+                JOptionPane.showMessageDialog(frame, "Name already exists, please choose another one", "Error",
                         JOptionPane.ERROR_MESSAGE);
                 return;
             }
@@ -196,7 +196,7 @@ public class GradingSystem {
                 preparedStatement.setString(3, (String) subjectsDropdown.getSelectedItem());
             }
 
-            preparedStatement.setString(1, username);
+            preparedStatement.setString(1, name);
             preparedStatement.setString(2, password);
 
             int rowsAffected = preparedStatement.executeUpdate();
@@ -224,7 +224,7 @@ public class GradingSystem {
 
         JPanel loginPanel = new JPanel(new GridLayout(3, 2));
 
-        loginPanel.add(new JLabel("Username:"));
+        loginPanel.add(new JLabel("Name:"));
         nameField = new JTextField(20);
         loginPanel.add(nameField);
 
@@ -258,7 +258,7 @@ public class GradingSystem {
 
         JPanel registerPanel = new JPanel(new GridLayout(4, 2));
 
-        registerPanel.add(new JLabel("Username:"));
+        registerPanel.add(new JLabel("Name:"));
         nameField = new JTextField(20);
         registerPanel.add(nameField);
 
@@ -655,7 +655,7 @@ public class GradingSystem {
     }
 
     private void logout() {
-        // Clear username and password fields
+        // Clear name and password fields
         nameField.setText("");
         passwordField.setText("");
 
@@ -680,10 +680,10 @@ public class GradingSystem {
     }
 
     private String getTeacherSubject() throws SQLException {
-        String username = nameField.getText();
+        String name = nameField.getText();
         PreparedStatement teacherSubjectStatement = connection.prepareStatement(
                 "SELECT subject FROM teachers WHERE name = ?");
-        teacherSubjectStatement.setString(1, username);
+        teacherSubjectStatement.setString(1, name);
         ResultSet subjectResultSet = teacherSubjectStatement.executeQuery();
 
         return subjectResultSet.next() ? subjectResultSet.getString("subject") : null;
@@ -697,9 +697,9 @@ public class GradingSystem {
         if (option == JOptionPane.YES_OPTION) {
             try {
                 // Delete the student account
-                String username = nameField.getText();
+                String name = nameField.getText();
                 PreparedStatement deleteStatement = connection.prepareStatement("DELETE FROM students WHERE name = ?");
-                deleteStatement.setString(1, username);
+                deleteStatement.setString(1, name);
 
                 int rowsAffected = deleteStatement.executeUpdate();
 
@@ -724,13 +724,13 @@ public class GradingSystem {
         return subjectCodes[index];
     }
 
-    // Check if the username already exists
-    private boolean isUsernameExists(String username, String userType) throws SQLException {
+    // Check if the name already exists
+    private boolean isNameAlreadyExists(String name, String userType) throws SQLException {
         String tableName = "Student".equals(userType) ? "students" : "teachers";
         String query = "SELECT COUNT(*) FROM " + tableName + " WHERE name = ?";
 
         try (PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, username);
+            statement.setString(1, name.toLowerCase());
             ResultSet resultSet = statement.executeQuery();
 
             resultSet.next();
@@ -748,9 +748,9 @@ public class GradingSystem {
         if (option == JOptionPane.YES_OPTION) {
             try {
                 // Delete the teacher account
-                String username = nameField.getText();
+                String name = nameField.getText();
                 PreparedStatement deleteStatement = connection.prepareStatement("DELETE FROM teachers WHERE name = ?");
-                deleteStatement.setString(1, username);
+                deleteStatement.setString(1, name);
 
                 int rowsAffected = deleteStatement.executeUpdate();
 
