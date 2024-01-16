@@ -28,22 +28,50 @@ CREATE TABLE students (
 );
 */
 
-import javax.swing.*;
-import javax.swing.event.DocumentListener;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.table.DefaultTableModel;
 
 public class GradingSystem {
     private static final String JDBC_URL = "jdbc:mysql://localhost:3306/grading_system";
     private static final String USERNAME = "root";
     private static final String PASSWORD = "alexis";
+
+    public static void main(final String[] args) {
+        SwingUtilities.invokeLater(() -> new GradingSystem().createAndShowGUI());
+    }
 
     private JDialog loginDialog;
     private JDialog registerDialog;
@@ -51,16 +79,13 @@ public class GradingSystem {
     private JTextField nameField;
     private JPasswordField passwordField;
     private JButton loginButton;
-    private JButton registerButton;
 
+    private JButton registerButton;
     private JComboBox<String> subjectsDropdown;
     private JComboBox<String> userTypeDropdown;
     private Connection connection;
-    private Statement statement;
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new GradingSystem().createAndShowGUI());
-    }
+    private Statement statement;
 
     private void createAndShowGUI() {
         frame = new JFrame("Grading System");
@@ -68,12 +93,12 @@ public class GradingSystem {
 
         frame.addWindowListener(new WindowAdapter() {
             @Override
-            public void windowClosing(WindowEvent e) {
+            public void windowClosing(final WindowEvent e) {
                 confirmExit();
             }
         });
 
-        JPanel panel = createMainScreen();
+        final JPanel panel = createMainScreen();
         frame.getContentPane().add(panel);
         frame.getContentPane().setPreferredSize(new Dimension(600, 400));
         frame.pack();
@@ -87,14 +112,14 @@ public class GradingSystem {
         try {
             connection = DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD);
             statement = connection.createStatement();
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             e.printStackTrace();
         }
     }
 
     private JPanel createMainScreen() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        GridBagConstraints constraints = new GridBagConstraints();
+        final JPanel panel = new JPanel(new GridBagLayout());
+        final GridBagConstraints constraints = new GridBagConstraints();
         constraints.insets = new Insets(5, 5, 5, 5);
 
         nameField = new JTextField(20);
@@ -119,8 +144,8 @@ public class GradingSystem {
     }
 
     private void login() {
-        String name = nameField.getText();
-        String password = new String(passwordField.getPassword());
+        final String name = nameField.getText();
+        final String password = new String(passwordField.getPassword());
 
         if (name.isEmpty() || password.isEmpty()) {
             JOptionPane.showMessageDialog(frame, "Please enter both name and password", "Error",
@@ -129,16 +154,16 @@ public class GradingSystem {
         }
 
         try {
-            String selectedUserType = (String) userTypeDropdown.getSelectedItem();
+            final String selectedUserType = (String) userTypeDropdown.getSelectedItem();
 
             // Check if the user is a teacher
             if ("Teacher".equals(selectedUserType)) {
-                PreparedStatement teacherStatement = connection.prepareStatement(
+                final PreparedStatement teacherStatement = connection.prepareStatement(
                         "SELECT * FROM teachers WHERE name = ? AND password = ?");
                 teacherStatement.setString(1, name);
                 teacherStatement.setString(2, password);
 
-                ResultSet teacherResultSet = teacherStatement.executeQuery();
+                final ResultSet teacherResultSet = teacherStatement.executeQuery();
 
                 if (teacherResultSet.next()) {
                     loginDialog.dispose();
@@ -148,12 +173,12 @@ public class GradingSystem {
             }
             // Check if the user is a student
             else if ("Student".equals(selectedUserType)) {
-                PreparedStatement studentStatement = connection.prepareStatement(
+                final PreparedStatement studentStatement = connection.prepareStatement(
                         "SELECT * FROM students WHERE name = ? AND password = ?");
                 studentStatement.setString(1, name);
                 studentStatement.setString(2, password);
 
-                ResultSet studentResultSet = studentStatement.executeQuery();
+                final ResultSet studentResultSet = studentStatement.executeQuery();
 
                 if (studentResultSet.next()) {
                     loginDialog.dispose();
@@ -165,14 +190,14 @@ public class GradingSystem {
             JOptionPane.showMessageDialog(frame, "Incorrect name or password", "Login Failed",
                     JOptionPane.ERROR_MESSAGE);
 
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             e.printStackTrace();
         }
     }
 
     private void register() {
-        String name = nameField.getText();
-        String password = new String(passwordField.getPassword());
+        final String name = nameField.getText();
+        final String password = new String(passwordField.getPassword());
 
         if (name.isEmpty() || password.isEmpty()) {
             JOptionPane.showMessageDialog(frame, "Please enter both name and password", "Error",
@@ -180,7 +205,7 @@ public class GradingSystem {
             return;
         }
 
-        String userType = (String) userTypeDropdown.getSelectedItem();
+        final String userType = (String) userTypeDropdown.getSelectedItem();
 
         try {
             // Check if the name already exists
@@ -209,7 +234,7 @@ public class GradingSystem {
             preparedStatement.setString(1, name);
             preparedStatement.setString(2, password);
 
-            int rowsAffected = preparedStatement.executeUpdate();
+            final int rowsAffected = preparedStatement.executeUpdate();
             if (rowsAffected > 0) {
                 JOptionPane.showMessageDialog(frame, "Registration successful", "Success",
                         JOptionPane.INFORMATION_MESSAGE);
@@ -219,7 +244,7 @@ public class GradingSystem {
                 JOptionPane.showMessageDialog(frame, "Registration failed", "Error", JOptionPane.ERROR_MESSAGE);
             }
 
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             e.printStackTrace();
         }
     }
@@ -229,10 +254,10 @@ public class GradingSystem {
         loginDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         loginDialog.setSize(400, 200);
         loginDialog.setLocationRelativeTo(frame);
-        GridBagConstraints constraints = new GridBagConstraints();
+        final GridBagConstraints constraints = new GridBagConstraints();
         constraints.insets = new Insets(5, 5, 5, 5);
 
-        JPanel loginPanel = new JPanel(new GridLayout(3, 2));
+        final JPanel loginPanel = new JPanel(new GridLayout(3, 2));
 
         loginPanel.add(new JLabel("Name:"));
         nameField = new JTextField(20);
@@ -248,7 +273,7 @@ public class GradingSystem {
         constraints.gridwidth = 2;
         loginPanel.add(userTypeDropdown, constraints);
 
-        JButton loginButton = new JButton("Login");
+        final JButton loginButton = new JButton("Login");
         loginButton.addActionListener(e -> {
             login();
         });
@@ -263,10 +288,10 @@ public class GradingSystem {
         registerDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         registerDialog.setSize(400, 200);
         registerDialog.setLocationRelativeTo(frame);
-        GridBagConstraints constraints = new GridBagConstraints();
+        final GridBagConstraints constraints = new GridBagConstraints();
         constraints.insets = new Insets(5, 5, 5, 5);
 
-        JPanel registerPanel = new JPanel(new GridLayout(4, 2));
+        final JPanel registerPanel = new JPanel(new GridLayout(4, 2));
 
         registerPanel.add(new JLabel("Name:"));
         nameField = new JTextField(20);
@@ -295,17 +320,17 @@ public class GradingSystem {
             subjectsDropdown.setEnabled("Teacher".equals(userTypeDropdown.getSelectedItem()));
 
             // Fetch subjects already selected by other teachers
-            List<String> subjectsSelectedByOtherTeachers = getSubjectsSelectedByOtherTeachers();
+            final List<String> subjectsSelectedByOtherTeachers = getSubjectsSelectedByOtherTeachers();
 
             // Remove already selected subjects from the dropdown
-            for (String subject : subjectsSelectedByOtherTeachers) {
+            for (final String subject : subjectsSelectedByOtherTeachers) {
                 subjectsDropdown.removeItem(subject);
             }
         });
 
         registerPanel.add(subjectsDropdown, constraints);
 
-        JButton registerButton = new JButton("Register");
+        final JButton registerButton = new JButton("Register");
         registerButton.addActionListener(e -> {
             register();
         });
@@ -315,28 +340,29 @@ public class GradingSystem {
         registerDialog.setVisible(true);
     }
 
-    private void searchStudentsByName(String query, JTable table) {
-        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+    private void searchStudentsByName(final String query, final JTable table) {
+        final SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
             @Override
             protected Void doInBackground() {
                 try {
-                    String selectedSubject = getTeacherSubject();
-                    String searchQuery = "SELECT id, name, " + selectedSubject + " FROM students WHERE name LIKE ?";
-                    PreparedStatement searchStatement = connection.prepareStatement(searchQuery);
+                    final String selectedSubject = getTeacherSubject();
+                    final String searchQuery = "SELECT id, name, " + selectedSubject
+                            + " FROM students WHERE name LIKE ?";
+                    final PreparedStatement searchStatement = connection.prepareStatement(searchQuery);
                     searchStatement.setString(1, "%" + query + "%");
 
-                    ResultSet resultSet = searchStatement.executeQuery();
+                    final ResultSet resultSet = searchStatement.executeQuery();
 
-                    String[] columnNames = { "ID", "Name", selectedSubject };
-                    DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
+                    final String[] columnNames = { "ID", "Name", selectedSubject };
+                    final DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
                         @Override
-                        public boolean isCellEditable(int row, int column) {
+                        public boolean isCellEditable(final int row, final int column) {
                             return false; // Make the table not editable
                         }
                     };
 
                     while (resultSet.next()) {
-                        Object[] rowData = {
+                        final Object[] rowData = {
                                 resultSet.getInt("id"),
                                 resultSet.getString("name"),
                                 resultSet.getInt(selectedSubject.toLowerCase()),
@@ -347,7 +373,7 @@ public class GradingSystem {
                     // Update the table model on the event dispatch thread
                     SwingUtilities.invokeLater(() -> table.setModel(tableModel));
 
-                } catch (SQLException e) {
+                } catch (final SQLException e) {
                     e.printStackTrace();
                 }
                 return null;
@@ -358,8 +384,8 @@ public class GradingSystem {
         worker.execute();
     }
 
-    private JTable createTable(DefaultTableModel tableModel) {
-        JTable table = new JTable(tableModel) {
+    private JTable createTable(final DefaultTableModel tableModel) {
+        final JTable table = new JTable(tableModel) {
             @Override
             public boolean getScrollableTracksViewportWidth() {
                 return getPreferredSize().width < getParent().getWidth();
@@ -367,7 +393,7 @@ public class GradingSystem {
         };
 
         table.getTableHeader().setReorderingAllowed(false); // Disable column rearrangement
-        int[] columnWidths = { 50, 100, 60 };
+        final int[] columnWidths = { 50, 100, 60 };
         for (int i = 0; i < columnWidths.length; i++) {
             table.getColumnModel().getColumn(i).setPreferredWidth(columnWidths[i]);
         }
@@ -382,20 +408,21 @@ public class GradingSystem {
         frame.setLocationRelativeTo(null);
 
         try {
-            String selectedSubject = getTeacherSubject();
-            ResultSet resultSet = statement.executeQuery("SELECT id, name, " + selectedSubject + " FROM students");
+            final String selectedSubject = getTeacherSubject();
+            final ResultSet resultSet = statement
+                    .executeQuery("SELECT id, name, " + selectedSubject + " FROM students");
 
             // Create a table to display student information
-            String[] columnNames = { "ID", "Name", selectedSubject };
-            DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
+            final String[] columnNames = { "ID", "Name", selectedSubject };
+            final DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
                 @Override
-                public boolean isCellEditable(int row, int column) {
+                public boolean isCellEditable(final int row, final int column) {
                     return false; // Make the table not editable
                 }
             };
 
             while (resultSet.next()) {
-                Object[] rowData = {
+                final Object[] rowData = {
                         resultSet.getInt("id"),
                         resultSet.getString("name"),
                         resultSet.getInt(selectedSubject.toLowerCase()),
@@ -403,48 +430,48 @@ public class GradingSystem {
                 tableModel.addRow(rowData);
             }
 
-            JTable table = createTable(tableModel);
+            final JTable table = createTable(tableModel);
 
-            JScrollPane scrollPane = new JScrollPane(table);
+            final JScrollPane scrollPane = new JScrollPane(table);
             table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-            JPanel searchPanel = new JPanel();
-            JTextField searchField = new JTextField(20);
+            final JPanel searchPanel = new JPanel();
+            final JTextField searchField = new JTextField(20);
 
             searchPanel.add(new JLabel("Search by Name:"));
             searchPanel.add(searchField);
             searchField.getDocument().addDocumentListener(new DocumentListener() {
                 @Override
-                public void insertUpdate(DocumentEvent e) {
+                public void insertUpdate(final DocumentEvent e) {
                     searchStudentsByName(searchField.getText(), table);
                 }
 
                 @Override
-                public void removeUpdate(DocumentEvent e) {
+                public void removeUpdate(final DocumentEvent e) {
                     searchStudentsByName(searchField.getText(), table);
                 }
 
                 @Override
-                public void changedUpdate(DocumentEvent e) {
+                public void changedUpdate(final DocumentEvent e) {
                     // Not needed for plain text fields
                 }
             });
 
-            JPanel buttonPanel = new JPanel();
-            JButton logoutButton = new JButton("Logout");
+            final JPanel buttonPanel = new JPanel();
+            final JButton logoutButton = new JButton("Logout");
             logoutButton.addActionListener(e -> logout());
             buttonPanel.add(logoutButton);
 
-            JButton editButton = new JButton("Edit Student");
+            final JButton editButton = new JButton("Edit Student");
             editButton.addActionListener(e -> {
-                int selectedRow = table.getSelectedRow();
+                final int selectedRow = table.getSelectedRow();
                 if (selectedRow != -1) {
                     editStudent((int) table.getValueAt(selectedRow, 0));
                 }
             });
             buttonPanel.add(editButton);
 
-            JButton deleteAccountButton = new JButton("Delete Account");
+            final JButton deleteAccountButton = new JButton("Delete Account");
             deleteAccountButton.addActionListener(e -> deleteTeacherAccount());
             buttonPanel.add(deleteAccountButton);
 
@@ -456,7 +483,7 @@ public class GradingSystem {
             frame.setSize(800, 600);
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             e.printStackTrace();
         }
     }
@@ -471,17 +498,17 @@ public class GradingSystem {
             resultSet = statement
                     .executeQuery("SELECT * FROM students WHERE name = '" + nameField.getText() + "'");
 
-            String[] columnNames = { "ID", "Name", "IM211", "CC214", "MS121", "PE3", "GE105", "GE106", "NET212",
+            final String[] columnNames = { "ID", "Name", "IM211", "CC214", "MS121", "PE3", "GE105", "GE106", "NET212",
                     "ITELECTV", "GENSOC", "Average Grade", "Status" };
-            DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
+            final DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
                 @Override
-                public boolean isCellEditable(int row, int column) {
+                public boolean isCellEditable(final int row, final int column) {
                     return false; // Make the table not editable
                 }
             };
 
             while (resultSet.next()) {
-                Object[] rowData = {
+                final Object[] rowData = {
                         resultSet.getInt("id"),
                         resultSet.getString("name"),
                         resultSet.getInt("IM211"),
@@ -498,7 +525,7 @@ public class GradingSystem {
                 };
                 tableModel.addRow(rowData);
             }
-            JTable table = new JTable(tableModel) {
+            final JTable table = new JTable(tableModel) {
                 @Override
                 public boolean getScrollableTracksViewportWidth() {
                     return getPreferredSize().width < getParent().getWidth();
@@ -506,21 +533,21 @@ public class GradingSystem {
             };
 
             table.getTableHeader().setReorderingAllowed(false); // Disable column rearrangement
-            int[] columnWidths = { 50, 100, 60, 60, 60, 60, 60, 60, 60, 80, 60, 100, 80 };
+            final int[] columnWidths = { 50, 100, 60, 60, 60, 60, 60, 60, 60, 80, 60, 100, 80 };
             for (int i = 0; i < columnWidths.length; i++) {
                 table.getColumnModel().getColumn(i).setPreferredWidth(columnWidths[i]);
             }
 
             // Wrap the table in a JScrollPane to enable horizontal scrolling
-            JScrollPane scrollPane = new JScrollPane(table);
+            final JScrollPane scrollPane = new JScrollPane(table);
             table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-            JPanel buttonPanel = new JPanel();
+            final JPanel buttonPanel = new JPanel();
 
-            JButton logoutButton = new JButton("Logout");
+            final JButton logoutButton = new JButton("Logout");
             logoutButton.addActionListener(e -> logout());
             buttonPanel.add(logoutButton);
-            JButton deleteAccountButton = new JButton("Delete Account");
+            final JButton deleteAccountButton = new JButton("Delete Account");
             deleteAccountButton.addActionListener(e -> deleteStudentAccount());
             buttonPanel.add(deleteAccountButton);
             frame.setLayout(new BorderLayout());
@@ -531,41 +558,42 @@ public class GradingSystem {
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
 
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             e.printStackTrace();
         }
     }
 
-    private void editStudent(int studentId) {
-        JTextField im211Field = new JTextField();
-        JTextField cc214Field = new JTextField();
-        JTextField ms121Field = new JTextField();
-        JTextField pe3Field = new JTextField();
-        JTextField ge105Field = new JTextField();
-        JTextField ge106Field = new JTextField();
-        JTextField net212Field = new JTextField();
-        JTextField itelectvField = new JTextField();
-        JTextField gensocField = new JTextField();
+    private void editStudent(final int studentId) {
+        final JTextField im211Field = new JTextField();
+        final JTextField cc214Field = new JTextField();
+        final JTextField ms121Field = new JTextField();
+        final JTextField pe3Field = new JTextField();
+        final JTextField ge105Field = new JTextField();
+        final JTextField ge106Field = new JTextField();
+        final JTextField net212Field = new JTextField();
+        final JTextField itelectvField = new JTextField();
+        final JTextField gensocField = new JTextField();
 
         try {
-            PreparedStatement selectStatement = connection.prepareStatement("SELECT * FROM students WHERE id = ?");
+            final PreparedStatement selectStatement = connection
+                    .prepareStatement("SELECT * FROM students WHERE id = ?");
             selectStatement.setInt(1, studentId);
-            ResultSet resultSet = selectStatement.executeQuery();
-            String selectedSubject = getTeacherSubject();
-            JPanel panel = new JPanel(new GridLayout(0, 1));
+            final ResultSet resultSet = selectStatement.executeQuery();
+            final String selectedSubject = getTeacherSubject();
+            final JPanel panel = new JPanel(new GridLayout(0, 1));
             if (resultSet.next()) {
-                ArrayList<JTextField> gradeFields = new ArrayList<>(
+                final ArrayList<JTextField> gradeFields = new ArrayList<>(
                         Arrays.asList(im211Field, cc214Field, ms121Field, pe3Field,
                                 ge105Field, ge106Field, net212Field, itelectvField, gensocField));
 
-                ArrayList<String> subjectCodes = new ArrayList<>(
+                final ArrayList<String> subjectCodes = new ArrayList<>(
                         Arrays.asList("IM211", "CC214", "MS121", "PE3", "GE105", "GE106", "NET212", "ITELECTV",
                                 "GENSOC"));
 
-                int totalSubjects = gradeFields.size();
+                final int totalSubjects = gradeFields.size();
 
                 for (int i = 0; i < gradeFields.size(); i++) {
-                    boolean isSelectedSubject = selectedSubject != null
+                    final boolean isSelectedSubject = selectedSubject != null
                             && selectedSubject.equalsIgnoreCase(getSubjectCode(i));
 
                     if (isSelectedSubject) {
@@ -581,23 +609,24 @@ public class GradingSystem {
                     }
                 }
 
-                int result = JOptionPane.showConfirmDialog(frame, panel, "Edit Student", JOptionPane.OK_CANCEL_OPTION);
+                final int result = JOptionPane.showConfirmDialog(frame, panel, "Edit Student",
+                        JOptionPane.OK_CANCEL_OPTION);
                 if (result == JOptionPane.OK_OPTION) {
                     // Obtain individual grades from text fields for update
-                    int im211 = Integer.parseInt(im211Field.getText());
-                    int cc214 = Integer.parseInt(cc214Field.getText());
-                    int ms121 = Integer.parseInt(ms121Field.getText());
-                    int pe3 = Integer.parseInt(pe3Field.getText());
-                    int ge105 = Integer.parseInt(ge105Field.getText());
-                    int ge106 = Integer.parseInt(ge106Field.getText());
-                    int net212 = Integer.parseInt(net212Field.getText());
-                    int itelectv = Integer.parseInt(itelectvField.getText());
-                    int gensoc = Integer.parseInt(gensocField.getText());
-                    int averageGrade = (im211 + cc214 + ms121 + pe3 + ge105 + ge106 + net212 + itelectv + gensoc)
+                    final int im211 = Integer.parseInt(im211Field.getText());
+                    final int cc214 = Integer.parseInt(cc214Field.getText());
+                    final int ms121 = Integer.parseInt(ms121Field.getText());
+                    final int pe3 = Integer.parseInt(pe3Field.getText());
+                    final int ge105 = Integer.parseInt(ge105Field.getText());
+                    final int ge106 = Integer.parseInt(ge106Field.getText());
+                    final int net212 = Integer.parseInt(net212Field.getText());
+                    final int itelectv = Integer.parseInt(itelectvField.getText());
+                    final int gensoc = Integer.parseInt(gensocField.getText());
+                    final int averageGrade = (im211 + cc214 + ms121 + pe3 + ge105 + ge106 + net212 + itelectv + gensoc)
                             / totalSubjects;
-                    String status = (averageGrade < 75) ? "Failed" : "Passed";
+                    final String status = (averageGrade < 75) ? "Failed" : "Passed";
 
-                    PreparedStatement preparedStatement = connection.prepareStatement(
+                    final PreparedStatement preparedStatement = connection.prepareStatement(
                             "UPDATE students SET IM211 = ?, CC214 = ?, MS121 = ?, PE3 = ?, GE105 = ?, GE106 = ?, NET212 = ?, ITELECTV = ?, GENSOC = ?, average_grade = ?, status = ? WHERE id = ?");
                     preparedStatement.setInt(1, im211);
                     preparedStatement.setInt(2, cc214);
@@ -622,7 +651,7 @@ public class GradingSystem {
                         return;
                     }
 
-                    int rowsAffected = preparedStatement.executeUpdate();
+                    final int rowsAffected = preparedStatement.executeUpdate();
                     if (rowsAffected > 0) {
                         JOptionPane.showMessageDialog(frame, "Student updated successfully", "Success",
                                 JOptionPane.INFORMATION_MESSAGE);
@@ -635,13 +664,13 @@ public class GradingSystem {
                 }
             }
 
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             e.printStackTrace();
         }
     }
 
     private void confirmExit() {
-        int option = JOptionPane.showConfirmDialog(null, "Are you sure you want to exit?", "Exit",
+        final int option = JOptionPane.showConfirmDialog(null, "Are you sure you want to exit?", "Exit",
                 JOptionPane.YES_NO_OPTION);
         if (option == JOptionPane.YES_OPTION) {
             // If the user clicks "Yes," exit the application
@@ -670,38 +699,39 @@ public class GradingSystem {
         frame.setVisible(true);
     }
 
-    private boolean isValidGradeRange(double grade) {
+    private boolean isValidGradeRange(final double grade) {
         return grade >= 50 && grade <= 100;
     }
 
-    private boolean isInvalidName(String name) {
+    private boolean isInvalidName(final String name) {
         // Use regex to check if the name contains only alphabets
         return !((name.matches("^[a-zA-Z.]+$")) || (name.contains(" ")));
     }
 
     private String getTeacherSubject() throws SQLException {
-        String name = nameField.getText();
-        PreparedStatement teacherSubjectStatement = connection.prepareStatement(
+        final String name = nameField.getText();
+        final PreparedStatement teacherSubjectStatement = connection.prepareStatement(
                 "SELECT subject FROM teachers WHERE name = ?");
         teacherSubjectStatement.setString(1, name);
-        ResultSet subjectResultSet = teacherSubjectStatement.executeQuery();
+        final ResultSet subjectResultSet = teacherSubjectStatement.executeQuery();
 
         return subjectResultSet.next() ? subjectResultSet.getString("subject") : null;
     }
 
     private void deleteStudentAccount() {
-        int option = JOptionPane.showConfirmDialog(frame, "Are you sure you want to delete your account?",
+        final int option = JOptionPane.showConfirmDialog(frame, "Are you sure you want to delete your account?",
                 "Delete Account",
                 JOptionPane.YES_NO_OPTION);
 
         if (option == JOptionPane.YES_OPTION) {
             try {
                 // Delete the student account
-                String name = nameField.getText();
-                PreparedStatement deleteStatement = connection.prepareStatement("DELETE FROM students WHERE name = ?");
+                final String name = nameField.getText();
+                final PreparedStatement deleteStatement = connection
+                        .prepareStatement("DELETE FROM students WHERE name = ?");
                 deleteStatement.setString(1, name);
 
-                int rowsAffected = deleteStatement.executeUpdate();
+                final int rowsAffected = deleteStatement.executeUpdate();
 
                 if (rowsAffected > 0) {
                     JOptionPane.showMessageDialog(frame, "Account deleted successfully", "Success",
@@ -713,46 +743,48 @@ public class GradingSystem {
                     JOptionPane.showMessageDialog(frame, "Failed to delete account", "Error",
                             JOptionPane.ERROR_MESSAGE);
                 }
-            } catch (SQLException ex) {
+            } catch (final SQLException ex) {
                 ex.printStackTrace();
             }
         }
     }
 
-    private String getSubjectCode(int index) {
-        String[] subjectCodes = { "IM211", "CC214", "MS121", "PE3", "GE105", "GE106", "NET212", "ITELECTV", "GENSOC" };
+    private String getSubjectCode(final int index) {
+        final String[] subjectCodes = { "IM211", "CC214", "MS121", "PE3", "GE105", "GE106", "NET212", "ITELECTV",
+                "GENSOC" };
         return subjectCodes[index];
     }
 
     // Check if the name already exists
-    private boolean isNameAlreadyExists(String name, String userType) throws SQLException {
-        String tableName = "Student".equals(userType) ? "students" : "teachers";
-        String query = "SELECT COUNT(*) FROM " + tableName + " WHERE name = ?";
+    private boolean isNameAlreadyExists(final String name, final String userType) throws SQLException {
+        final String tableName = "Student".equals(userType) ? "students" : "teachers";
+        final String query = "SELECT COUNT(*) FROM " + tableName + " WHERE name = ?";
 
         try (PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setString(1, name.toLowerCase());
-            ResultSet resultSet = statement.executeQuery();
+            final ResultSet resultSet = statement.executeQuery();
 
             resultSet.next();
-            int count = resultSet.getInt(1);
+            final int count = resultSet.getInt(1);
 
             return count > 0;
         }
     }
 
     private void deleteTeacherAccount() {
-        int option = JOptionPane.showConfirmDialog(frame, "Are you sure you want to delete your account?",
+        final int option = JOptionPane.showConfirmDialog(frame, "Are you sure you want to delete your account?",
                 "Delete Account",
                 JOptionPane.YES_NO_OPTION);
 
         if (option == JOptionPane.YES_OPTION) {
             try {
                 // Delete the teacher account
-                String name = nameField.getText();
-                PreparedStatement deleteStatement = connection.prepareStatement("DELETE FROM teachers WHERE name = ?");
+                final String name = nameField.getText();
+                final PreparedStatement deleteStatement = connection
+                        .prepareStatement("DELETE FROM teachers WHERE name = ?");
                 deleteStatement.setString(1, name);
 
-                int rowsAffected = deleteStatement.executeUpdate();
+                final int rowsAffected = deleteStatement.executeUpdate();
 
                 if (rowsAffected > 0) {
                     JOptionPane.showMessageDialog(frame, "Account deleted successfully", "Success",
@@ -764,24 +796,24 @@ public class GradingSystem {
                     JOptionPane.showMessageDialog(frame, "Failed to delete account", "Error",
                             JOptionPane.ERROR_MESSAGE);
                 }
-            } catch (SQLException ex) {
+            } catch (final SQLException ex) {
                 ex.printStackTrace();
             }
         }
     }
 
     private List<String> getSubjectsSelectedByOtherTeachers() {
-        List<String> subjects = new ArrayList<>();
+        final List<String> subjects = new ArrayList<>();
         try {
-            String query = "SELECT subject FROM teachers WHERE name <> ?";
-            PreparedStatement statement = connection.prepareStatement(query);
+            final String query = "SELECT subject FROM teachers WHERE name <> ?";
+            final PreparedStatement statement = connection.prepareStatement(query);
             statement.setString(1, nameField.getText()); // Exclude the current teacher from the query
-            ResultSet resultSet = statement.executeQuery();
+            final ResultSet resultSet = statement.executeQuery();
 
             while (resultSet.next()) {
                 subjects.add(resultSet.getString("subject"));
             }
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             e.printStackTrace();
         }
         return subjects;
