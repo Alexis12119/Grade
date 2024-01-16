@@ -536,57 +536,39 @@ public class GradingSystem {
         JTextField net212Field = new JTextField();
         JTextField itelectvField = new JTextField();
         JTextField gensocField = new JTextField();
-        JTextField averageGradeField = new JTextField();
-        JTextField statusField = new JTextField();
 
         try {
             PreparedStatement selectStatement = connection.prepareStatement("SELECT * FROM students WHERE id = ?");
             selectStatement.setInt(1, studentId);
             ResultSet resultSet = selectStatement.executeQuery();
+            String selectedSubject = getTeacherSubject();
+            JPanel panel = new JPanel(new GridLayout(0, 1));
             if (resultSet.next()) {
-                im211Field.setText(String.valueOf(resultSet.getInt("im211")));
-                cc214Field.setText(String.valueOf(resultSet.getInt("cc214")));
-                ms121Field.setText(String.valueOf(resultSet.getInt("ms121")));
-                pe3Field.setText(String.valueOf(resultSet.getInt("pe3")));
-                ge105Field.setText(String.valueOf(resultSet.getInt("ge105")));
-                ge106Field.setText(String.valueOf(resultSet.getInt("ge106")));
-                net212Field.setText(String.valueOf(resultSet.getInt("net212")));
-                itelectvField.setText(String.valueOf(resultSet.getInt("itelectv")));
-                gensocField.setText(String.valueOf(resultSet.getInt("gensoc")));
-                averageGradeField.setText(String.valueOf(resultSet.getInt("average_grade")));
-                statusField.setText(resultSet.getString("status"));
-                String selectedSubject = getTeacherSubject();
-
-                ArrayList<JTextField> subjectFields = new ArrayList<>(
+                ArrayList<JTextField> gradeFields = new ArrayList<>(
                         Arrays.asList(im211Field, cc214Field, ms121Field, pe3Field,
                                 ge105Field, ge106Field, net212Field, itelectvField, gensocField));
-                // Enable or disable the subject text fields based on the selected subject
-                for (int i = 0; i < subjectFields.size(); i++) {
-                    subjectFields.get(i)
+
+                ArrayList<String> subjectCodes = new ArrayList<>(
+                        Arrays.asList("im211", "cc214", "ms121", "pe3", "ge105", "ge106", "net212", "itelectv",
+                                "gensoc"));
+
+                int totalSubjects = gradeFields.size();
+                int sumOfGrades = 0;
+
+                for (int i = 0; i < gradeFields.size(); i++) {
+                    gradeFields.get(i).setText(String.valueOf(resultSet.getInt(subjectCodes.get(i))));
+                    gradeFields.get(i)
                             .setEnabled(selectedSubject != null && selectedSubject.equalsIgnoreCase(getSubjectCode(i)));
+                    panel.add(new JLabel(getSubjectCode(i) + ":"));
+                    panel.add(gradeFields.get(i));
+
+                    int grade = Integer.parseInt(gradeFields.get(i).getText());
+                    sumOfGrades += grade;
                 }
-                JPanel panel = new JPanel(new GridLayout(0, 1));
-                panel.add(new JLabel("IM211:"));
-                panel.add(im211Field);
-                panel.add(new JLabel("CC214:"));
-                panel.add(cc214Field);
-                panel.add(new JLabel("MS121:"));
-                panel.add(ms121Field);
-                panel.add(new JLabel("PE3:"));
-                panel.add(pe3Field);
-                panel.add(new JLabel("GE105:"));
-                panel.add(ge105Field);
-                panel.add(new JLabel("GE106:"));
-                panel.add(ge106Field);
-                panel.add(new JLabel("NET212:"));
-                panel.add(net212Field);
-                panel.add(new JLabel("ITELECTV:"));
-                panel.add(itelectvField);
-                panel.add(new JLabel("GENSOC:"));
-                panel.add(gensocField);
 
                 int result = JOptionPane.showConfirmDialog(frame, panel, "Edit Student", JOptionPane.OK_CANCEL_OPTION);
                 if (result == JOptionPane.OK_OPTION) {
+                    // Obtain individual grades from text fields for update
                     int im211 = Integer.parseInt(im211Field.getText());
                     int cc214 = Integer.parseInt(cc214Field.getText());
                     int ms121 = Integer.parseInt(ms121Field.getText());
@@ -596,11 +578,8 @@ public class GradingSystem {
                     int net212 = Integer.parseInt(net212Field.getText());
                     int itelectv = Integer.parseInt(itelectvField.getText());
                     int gensoc = Integer.parseInt(gensocField.getText());
-                    int averageGrade = (im211 + cc214 + ms121 + pe3 + ge105 + ge106 + net212 + itelectv + gensoc) / 9;
-                    String status = "Passed";
-                    if (averageGrade < 75) {
-                        status = "Failed";
-                    }
+                    int averageGrade = sumOfGrades / totalSubjects;
+                    String status = (averageGrade < 75) ? "Failed" : "Passed";
 
                     PreparedStatement preparedStatement = connection.prepareStatement(
                             "UPDATE students SET im211 = ?, cc214 = ?, ms121 = ?, pe3 = ?, ge105 = ?, ge106 = ?, net212 = ?, itelectv = ?, gensoc = ?, average_grade = ?, status = ? WHERE id = ?");
