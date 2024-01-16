@@ -1,3 +1,29 @@
+/*
+CREATE TABLE teachers (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    subject VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE students (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    im211 INT DEFAULT 99,
+    cc214 INT DEFAULT 99,
+    ms121 INT DEFAULT 99,
+    pe3 INT DEFAULT 99,
+    ge105 INT DEFAULT 99,
+    ge106 INT DEFAULT 99,
+    net212 INT DEFAULT 99,
+    itelectv INT DEFAULT 99,
+    gensoc INT DEFAULT 99,
+    average_grade INT DEFAULT 99,
+    status VARCHAR(255) DEFAULT 'Passed'
+);
+*/
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -43,7 +69,7 @@ public class GradingSystem {
 
         JPanel panel = createMainScreen();
         frame.getContentPane().add(panel);
-
+        frame.getContentPane().setPreferredSize(new Dimension(600, 400));
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
@@ -161,7 +187,7 @@ public class GradingSystem {
             PreparedStatement preparedStatement;
             if ("Student".equals(userType)) {
                 preparedStatement = connection.prepareStatement(
-                        "INSERT INTO students (name, password, im211, cc214, ms121, pe3, ge105, ge106, net212, itelectv, gensoc, average_grade, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?)");
+                        "INSERT INTO students (name, password) VALUES (?,?)");
             } else {
                 preparedStatement = connection.prepareStatement(
                         "INSERT INTO teachers (name, password, subject) VALUES (?, ?, ?)");
@@ -170,20 +196,6 @@ public class GradingSystem {
 
             preparedStatement.setString(1, username);
             preparedStatement.setString(2, password);
-
-            if ("Student".equals(userType)) {
-                preparedStatement.setInt(3, 99);
-                preparedStatement.setInt(4, 99);
-                preparedStatement.setInt(5, 99);
-                preparedStatement.setInt(6, 99);
-                preparedStatement.setInt(7, 99);
-                preparedStatement.setInt(8, 99);
-                preparedStatement.setInt(9, 99);
-                preparedStatement.setInt(10, 99);
-                preparedStatement.setInt(11, 99);
-                preparedStatement.setInt(12, 99);
-                preparedStatement.setString(13, "Passed");
-            }
 
             int rowsAffected = preparedStatement.executeUpdate();
             if (rowsAffected > 0) {
