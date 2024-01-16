@@ -25,6 +25,7 @@ CREATE TABLE students (
 */
 
 import javax.swing.*;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
@@ -33,6 +34,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import javax.swing.event.DocumentEvent;
 
 public class GradingSystem {
     private static final String JDBC_URL = "jdbc:mysql://localhost:3306/grading_system";
@@ -398,11 +400,25 @@ public class GradingSystem {
 
             JPanel searchPanel = new JPanel();
             JTextField searchField = new JTextField(20);
-            JButton searchButton = new JButton("Search");
-            searchButton.addActionListener(e -> searchStudentsByName(searchField.getText(), table));
+
             searchPanel.add(new JLabel("Search by Name:"));
             searchPanel.add(searchField);
-            searchPanel.add(searchButton);
+            searchField.getDocument().addDocumentListener(new DocumentListener() {
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    searchStudentsByName(searchField.getText(), table);
+                }
+
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    searchStudentsByName(searchField.getText(), table);
+                }
+
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    // Not needed for plain text fields
+                }
+            });
 
             JPanel buttonPanel = new JPanel();
             JButton logoutButton = new JButton("Logout");
