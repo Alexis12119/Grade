@@ -93,7 +93,7 @@ public class GradingSystem {
 
         frame.addWindowListener(new WindowAdapter() {
             @Override
-            public void windowClosing(final WindowEvent e) {
+            public void windowClosing(final WindowEvent event) {
                 confirmExit();
             }
         });
@@ -112,8 +112,8 @@ public class GradingSystem {
         try {
             connection = DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD);
             statement = connection.createStatement();
-        } catch (final SQLException e) {
-            e.printStackTrace();
+        } catch (final SQLException event) {
+            event.printStackTrace();
         }
     }
 
@@ -127,8 +127,8 @@ public class GradingSystem {
         loginButton = new JButton("Login");
         registerButton = new JButton("Register");
 
-        loginButton.addActionListener(e -> showLoginDialog());
-        registerButton.addActionListener(e -> showRegisterDialog());
+        loginButton.addActionListener(event -> showLoginDialog());
+        registerButton.addActionListener(event -> showRegisterDialog());
 
         constraints.gridx = 0;
         constraints.gridy = 2;
@@ -143,7 +143,7 @@ public class GradingSystem {
         return panel;
     }
 
-    private void login() {
+    private void loginAction() {
         final String name = nameField.getText();
         final String password = new String(passwordField.getPassword());
 
@@ -190,12 +190,12 @@ public class GradingSystem {
             JOptionPane.showMessageDialog(frame, "Incorrect name or password", "Login Failed",
                     JOptionPane.ERROR_MESSAGE);
 
-        } catch (final SQLException e) {
-            e.printStackTrace();
+        } catch (final SQLException event) {
+            event.printStackTrace();
         }
     }
 
-    private void register() {
+    private void registerAction() {
         final String name = nameField.getText();
         final String password = new String(passwordField.getPassword());
 
@@ -244,8 +244,8 @@ public class GradingSystem {
                 JOptionPane.showMessageDialog(frame, "Registration failed", "Error", JOptionPane.ERROR_MESSAGE);
             }
 
-        } catch (final SQLException e) {
-            e.printStackTrace();
+        } catch (final SQLException event) {
+            event.printStackTrace();
         }
     }
 
@@ -274,8 +274,8 @@ public class GradingSystem {
         loginPanel.add(userTypeDropdown, constraints);
 
         final JButton loginButton = new JButton("Login");
-        loginButton.addActionListener(e -> {
-            login();
+        loginButton.addActionListener(event -> {
+            loginAction();
         });
         loginPanel.add(loginButton);
 
@@ -315,7 +315,7 @@ public class GradingSystem {
         constraints.gridy = 5;
         constraints.gridwidth = 2;
 
-        userTypeDropdown.addActionListener(e -> {
+        userTypeDropdown.addActionListener(event -> {
             // Enable the subjects dropdown only if the user type is "Teacher"
             subjectsDropdown.setEnabled("Teacher".equals(userTypeDropdown.getSelectedItem()));
 
@@ -331,8 +331,8 @@ public class GradingSystem {
         registerPanel.add(subjectsDropdown, constraints);
 
         final JButton registerButton = new JButton("Register");
-        registerButton.addActionListener(e -> {
-            register();
+        registerButton.addActionListener(event -> {
+            registerAction();
         });
         registerPanel.add(registerButton);
 
@@ -373,8 +373,8 @@ public class GradingSystem {
                     // Update the table model on the event dispatch thread
                     SwingUtilities.invokeLater(() -> table.setModel(tableModel));
 
-                } catch (final SQLException e) {
-                    e.printStackTrace();
+                } catch (final SQLException event) {
+                    event.printStackTrace();
                 }
                 return null;
             }
@@ -442,28 +442,28 @@ public class GradingSystem {
             searchPanel.add(searchField);
             searchField.getDocument().addDocumentListener(new DocumentListener() {
                 @Override
-                public void insertUpdate(final DocumentEvent e) {
+                public void insertUpdate(final DocumentEvent event) {
                     searchStudentsByName(searchField.getText(), table);
                 }
 
                 @Override
-                public void removeUpdate(final DocumentEvent e) {
+                public void removeUpdate(final DocumentEvent event) {
                     searchStudentsByName(searchField.getText(), table);
                 }
 
                 @Override
-                public void changedUpdate(final DocumentEvent e) {
-                    // Not needed for plain text fields
+                public void changedUpdate(final DocumentEvent event) {
+                    // Not Needed
                 }
             });
 
             final JPanel buttonPanel = new JPanel();
             final JButton logoutButton = new JButton("Logout");
-            logoutButton.addActionListener(e -> logout());
+            logoutButton.addActionListener(event -> logout());
             buttonPanel.add(logoutButton);
 
             final JButton editButton = new JButton("Edit Student");
-            editButton.addActionListener(e -> {
+            editButton.addActionListener(event -> {
                 final int selectedRow = table.getSelectedRow();
                 if (selectedRow != -1) {
                     editStudent((int) table.getValueAt(selectedRow, 0));
@@ -472,7 +472,7 @@ public class GradingSystem {
             buttonPanel.add(editButton);
 
             final JButton deleteAccountButton = new JButton("Delete Account");
-            deleteAccountButton.addActionListener(e -> deleteTeacherAccount());
+            deleteAccountButton.addActionListener(event -> deleteTeacherAccount());
             buttonPanel.add(deleteAccountButton);
 
             frame.setLayout(new BorderLayout());
@@ -483,8 +483,8 @@ public class GradingSystem {
             frame.setSize(800, 600);
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
-        } catch (final SQLException e) {
-            e.printStackTrace();
+        } catch (final SQLException event) {
+            event.printStackTrace();
         }
     }
 
@@ -545,10 +545,10 @@ public class GradingSystem {
             final JPanel buttonPanel = new JPanel();
 
             final JButton logoutButton = new JButton("Logout");
-            logoutButton.addActionListener(e -> logout());
+            logoutButton.addActionListener(event -> logout());
             buttonPanel.add(logoutButton);
             final JButton deleteAccountButton = new JButton("Delete Account");
-            deleteAccountButton.addActionListener(e -> deleteStudentAccount());
+            deleteAccountButton.addActionListener(event -> deleteStudentAccount());
             buttonPanel.add(deleteAccountButton);
             frame.setLayout(new BorderLayout());
             frame.add(scrollPane, BorderLayout.CENTER);
@@ -558,8 +558,8 @@ public class GradingSystem {
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
 
-        } catch (final SQLException e) {
-            e.printStackTrace();
+        } catch (final SQLException event) {
+            event.printStackTrace();
         }
     }
 
@@ -645,7 +645,7 @@ public class GradingSystem {
                             || !isValidGradeRange(ms121) ||
                             !isValidGradeRange(pe3) || !isValidGradeRange(ge105) || !isValidGradeRange(ge106) ||
                             !isValidGradeRange(net212) || !isValidGradeRange(itelectv) || !isValidGradeRange(gensoc)) {
-                        JOptionPane.showMessageDialog(frame, "Please enter valid grades for all fields", "Error",
+                        JOptionPane.showMessageDialog(frame, "Please enter a valid grade", "Error",
                                 JOptionPane.ERROR_MESSAGE);
                         editStudent(studentId);
                         return;
@@ -664,8 +664,8 @@ public class GradingSystem {
                 }
             }
 
-        } catch (final SQLException e) {
-            e.printStackTrace();
+        } catch (final SQLException event) {
+            event.printStackTrace();
         }
     }
 
@@ -709,10 +709,10 @@ public class GradingSystem {
     }
 
     private String getTeacherSubject() throws SQLException {
-        final String name = nameField.getText();
+        final String studentName = nameField.getText();
         final PreparedStatement teacherSubjectStatement = connection.prepareStatement(
                 "SELECT subject FROM teachers WHERE name = ?");
-        teacherSubjectStatement.setString(1, name);
+        teacherSubjectStatement.setString(1, studentName);
         final ResultSet subjectResultSet = teacherSubjectStatement.executeQuery();
 
         return subjectResultSet.next() ? subjectResultSet.getString("subject") : null;
@@ -726,10 +726,10 @@ public class GradingSystem {
         if (option == JOptionPane.YES_OPTION) {
             try {
                 // Delete the student account
-                final String name = nameField.getText();
+                final String studentName = nameField.getText();
                 final PreparedStatement deleteStatement = connection
                         .prepareStatement("DELETE FROM students WHERE name = ?");
-                deleteStatement.setString(1, name);
+                deleteStatement.setString(1, studentName);
 
                 final int rowsAffected = deleteStatement.executeUpdate();
 
@@ -743,8 +743,8 @@ public class GradingSystem {
                     JOptionPane.showMessageDialog(frame, "Failed to delete account", "Error",
                             JOptionPane.ERROR_MESSAGE);
                 }
-            } catch (final SQLException ex) {
-                ex.printStackTrace();
+            } catch (final SQLException event) {
+                event.printStackTrace();
             }
         }
     }
@@ -779,10 +779,10 @@ public class GradingSystem {
         if (option == JOptionPane.YES_OPTION) {
             try {
                 // Delete the teacher account
-                final String name = nameField.getText();
+                final String teacherName = nameField.getText();
                 final PreparedStatement deleteStatement = connection
                         .prepareStatement("DELETE FROM teachers WHERE name = ?");
-                deleteStatement.setString(1, name);
+                deleteStatement.setString(1, teacherName);
 
                 final int rowsAffected = deleteStatement.executeUpdate();
 
@@ -796,8 +796,8 @@ public class GradingSystem {
                     JOptionPane.showMessageDialog(frame, "Failed to delete account", "Error",
                             JOptionPane.ERROR_MESSAGE);
                 }
-            } catch (final SQLException ex) {
-                ex.printStackTrace();
+            } catch (final SQLException event) {
+                event.printStackTrace();
             }
         }
     }
@@ -813,8 +813,8 @@ public class GradingSystem {
             while (resultSet.next()) {
                 subjects.add(resultSet.getString("subject"));
             }
-        } catch (final SQLException e) {
-            e.printStackTrace();
+        } catch (final SQLException event) {
+            event.printStackTrace();
         }
         return subjects;
     }
