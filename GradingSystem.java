@@ -1,3 +1,5 @@
+package System;
+
 /*
 CREATE DATABASE grading_system;
 
@@ -14,26 +16,31 @@ CREATE TABLE students (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
-    IM211 INT DEFAULT 99,
-    CC214 INT DEFAULT 99,
-    MS121 INT DEFAULT 99,
-    PE3 INT DEFAULT 99,
-    GE105 INT DEFAULT 99,
-    GE106 INT DEFAULT 99,
-    NET212 INT DEFAULT 99,
-    ITELECTV INT DEFAULT 99,
-    GENSOC INT DEFAULT 99,
-    average_grade INT DEFAULT 99,
-    status VARCHAR(255) DEFAULT 'Passed'
+    IM211 INT DEFAULT 50,
+    CC214 INT DEFAULT 50,
+    MS121 INT DEFAULT 50,
+    PE3 INT DEFAULT 50,
+    GE105 INT DEFAULT 50,
+    GE106 INT DEFAULT 50,
+    NET212 INT DEFAULT 50,
+    ITELECTV INT DEFAULT 50,
+    GENSOC INT DEFAULT 50,
+    average_grade INT DEFAULT 50,
+    status VARCHAR(255) DEFAULT 'Failed'
 );
-*/
+ */
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.sql.Connection;
@@ -45,8 +52,12 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.swing.ImageIcon;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -63,8 +74,10 @@ import javax.swing.SwingWorker;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
+import keeptoo.KGradientPanel;
 
 public class GradingSystem {
+
     private static final String JDBC_URL = "jdbc:mysql://localhost:3306/grading_system";
     private static final String USERNAME = "root";
     private static final String PASSWORD = "alexis";
@@ -73,6 +86,7 @@ public class GradingSystem {
         SwingUtilities.invokeLater(() -> new GradingSystem().createAndShowGUI());
     }
 
+    // Instance variables
     private JDialog loginDialog;
     private JDialog registerDialog;
     private JFrame frame;
@@ -87,8 +101,9 @@ public class GradingSystem {
 
     private Statement statement;
 
+    // Create the GUI
     private void createAndShowGUI() {
-        frame = new JFrame("Grading System");
+        frame = new JFrame("AcuGrade");
         frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
         frame.addWindowListener(new WindowAdapter() {
@@ -100,11 +115,12 @@ public class GradingSystem {
 
         final JPanel panel = createMainScreen();
         frame.getContentPane().add(panel);
-        frame.getContentPane().setPreferredSize(new Dimension(600, 400));
+        frame.getContentPane().setPreferredSize(new Dimension(800, 400));
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
+        // Start the database
         initializeDatabase();
     }
 
@@ -117,8 +133,16 @@ public class GradingSystem {
         }
     }
 
-    private JPanel createMainScreen() {
-        final JPanel panel = new JPanel(new GridBagLayout());
+    public JPanel createMainScreen() {
+        // Use KGradientPanel instead of JPanel
+        final KGradientPanel panel = new KGradientPanel();
+
+        // Set the gradient colors
+        panel.setkStartColor(new Color(62, 23, 25));  // Dark violet color
+        panel.setkEndColor(new Color(187, 20, 53));
+        panel.setkGradientFocus(0);
+
+        panel.setLayout(new GridBagLayout());
         final GridBagConstraints constraints = new GridBagConstraints();
         constraints.insets = new Insets(5, 5, 5, 5);
 
@@ -127,8 +151,27 @@ public class GradingSystem {
         loginButton = new JButton("Login");
         registerButton = new JButton("Register");
 
+        // Set pastel white color for buttons
+        Color pastelWhite = new Color(240, 240, 240);  // Adjust as needed
+        loginButton.setBackground(pastelWhite);
+        registerButton.setBackground(pastelWhite);
+
         loginButton.addActionListener(event -> showLoginDialog());
         registerButton.addActionListener(event -> showRegisterDialog());
+
+        // Logo image label
+        JLabel logoImageLabel = new JLabel();
+        logoImageLabel.setIcon(new ImageIcon(getClass().getResource("logo.png")));
+
+        // Create a panel to hold both labels horizontally
+        JPanel logoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        logoPanel.setOpaque(false); // Make the panel transparent
+        logoPanel.add(logoImageLabel);
+
+        constraints.gridx = 0;
+        constraints.gridy = 0;
+        constraints.gridwidth = 2;
+        panel.add(logoPanel, constraints);
 
         constraints.gridx = 0;
         constraints.gridy = 2;
@@ -170,8 +213,7 @@ public class GradingSystem {
                     showTeacherDashboard();
                     return;
                 }
-            }
-            // Check if the user is a student
+            } // Check if the user is a student
             else if ("Student".equals(selectedUserType)) {
                 final PreparedStatement studentStatement = connection.prepareStatement(
                         "SELECT * FROM students WHERE name = ? AND password = ?");
@@ -187,7 +229,7 @@ public class GradingSystem {
                 }
             }
 
-            JOptionPane.showMessageDialog(frame, "Incorrect name or password", "Login Failed",
+            JOptionPane.showMessageDialog(frame, "Incorrect name, password or role", "Login Failed",
                     JOptionPane.ERROR_MESSAGE);
 
         } catch (final SQLException event) {
@@ -221,6 +263,18 @@ public class GradingSystem {
                 return;
             }
 
+            if (!isValidPassword(password)) {
+
+                JOptionPane.showMessageDialog(frame, "Password should contain uppercase, lowercase, and digit.", "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            if(!isValidLength(password)) {
+                JOptionPane.showMessageDialog(frame, "Password length should be > 6.", "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             PreparedStatement preparedStatement;
             if ("Student".equals(userType)) {
                 preparedStatement = connection.prepareStatement(
@@ -249,35 +303,83 @@ public class GradingSystem {
         }
     }
 
+    public static boolean isValidPassword(String password) {
+        // Check if it contains at least one uppercase, lowercase, and digit
+        String regex = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d).+$";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(password);
+
+        return matcher.matches();
+    }
+
     private void showLoginDialog() {
         loginDialog = new JDialog(frame, "Login", true);
         loginDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         loginDialog.setSize(400, 200);
         loginDialog.setLocationRelativeTo(frame);
+
+        final KGradientPanel loginPanel = new KGradientPanel(); // Replace with the actual class from your library
+        loginPanel.setLayout(new GridBagLayout());
         final GridBagConstraints constraints = new GridBagConstraints();
         constraints.insets = new Insets(5, 5, 5, 5);
 
-        final JPanel loginPanel = new JPanel(new GridLayout(3, 2));
-
-        loginPanel.add(new JLabel("Name:"));
-        nameField = new JTextField(20);
-        loginPanel.add(nameField);
-
-        loginPanel.add(new JLabel("Password:"));
-        passwordField = new JPasswordField(20);
-        loginPanel.add(passwordField);
-
-        userTypeDropdown = new JComboBox<>(new String[] { "Student", "Teacher" });
+        // Name label and text field
         constraints.gridx = 0;
-        constraints.gridy = 4;
+        constraints.gridy = 0;
+        loginPanel.add(new JLabel("Name:"), constraints);
+
+        constraints.gridx = 1;
+        constraints.gridy = 0;
+        nameField = new JTextField(20);
+        loginPanel.add(nameField, constraints);
+
+        // Password label and password field
+        constraints.gridx = 0;
+        constraints.gridy = 1;
+        loginPanel.add(new JLabel("Password:"), constraints);
+
+        constraints.gridx = 1;
+        constraints.gridy = 1;
+        passwordField = new JPasswordField(20);
+        loginPanel.add(passwordField, constraints);
+
+        constraints.gridx = 4;
+        constraints.gridy = 1;
+        JCheckBox showPasswordCheckBox = new JCheckBox("Show"); // Unicode for eye icon
+        showPasswordCheckBox.setFont(new Font("Arial", Font.PLAIN, 8)); // Adjust font size if needed
+        showPasswordCheckBox.setForeground(Color.white);
+        showPasswordCheckBox.setOpaque(false);
+        showPasswordCheckBox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    passwordField.setEchoChar((char) 0); // Show password
+                } else {
+                    passwordField.setEchoChar('*'); // Hide password
+                }
+            }
+        });
+        loginPanel.add(showPasswordCheckBox, constraints);
+
+        // User type dropdown
+        userTypeDropdown = new JComboBox<>(new String[]{"Student", "Teacher"});
+        constraints.gridx = 1;
+        constraints.gridy = 2;
         constraints.gridwidth = 2;
         loginPanel.add(userTypeDropdown, constraints);
 
+        // Login button
         final JButton loginButton = new JButton("Login");
-        loginButton.addActionListener(event -> {
-            loginAction();
-        });
-        loginPanel.add(loginButton);
+        loginButton.addActionListener(event -> loginAction());
+        constraints.gridx = 1;
+        constraints.gridy = 3;
+        constraints.gridwidth = 2;
+        loginPanel.add(loginButton, constraints);
+
+        // Set the background color of the panel with alpha for transparency
+        loginPanel.setkEndColor(new Color(128, 0, 0)); // Dark maroon color
+        loginPanel.setkStartColor(Color.WHITE); // White color
+        loginPanel.setkGradientFocus(300); // Adjust alpha (last parameter) as needed
 
         loginDialog.add(loginPanel);
         loginDialog.setVisible(true);
@@ -286,37 +388,77 @@ public class GradingSystem {
     private void showRegisterDialog() {
         registerDialog = new JDialog(frame, "Register", true);
         registerDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        registerDialog.setSize(400, 200);
+        registerDialog.setSize(600, 400);
         registerDialog.setLocationRelativeTo(frame);
+
+        // Use KGradientPanel as the content pane for the dialog
+        KGradientPanel buttonPanel = new KGradientPanel();
+        buttonPanel.setLayout(new BorderLayout());
+        buttonPanel.setkEndColor(new Color(128, 0, 0)); // Dark maroon color
+        buttonPanel.setkStartColor(Color.WHITE); // White color
+        buttonPanel.setkGradientFocus(300);                  // Linear gradient from top to bottom
+        registerDialog.setContentPane(buttonPanel);
+
+        final JPanel registerPanel = new JPanel(new GridBagLayout());
+        registerPanel.setOpaque(false); // Make the panel transparent
+
         final GridBagConstraints constraints = new GridBagConstraints();
         constraints.insets = new Insets(5, 5, 5, 5);
+        constraints.fill = GridBagConstraints.HORIZONTAL;
 
-        final JPanel registerPanel = new JPanel(new GridLayout(4, 2));
-
-        registerPanel.add(new JLabel("Name:"));
+        // Name
+        registerPanel.add(new JLabel("Name:"), constraints);
+        constraints.gridx = 1;
+        constraints.gridy = 0;
         nameField = new JTextField(20);
-        registerPanel.add(nameField);
+        registerPanel.add(nameField, constraints);
 
-        registerPanel.add(new JLabel("Password:"));
-        passwordField = new JPasswordField(20);
-        registerPanel.add(passwordField);
-
-        userTypeDropdown = new JComboBox<>(new String[] { "Student", "Teacher" });
+        // Password
         constraints.gridx = 0;
-        constraints.gridy = 4;
-        constraints.gridwidth = 2;
+        constraints.gridy = 1;
+        registerPanel.add(new JLabel("Password:"), constraints);
+        constraints.gridx = 1;
+        constraints.gridy = 1;
+        passwordField = new JPasswordField(20);
+        registerPanel.add(passwordField, constraints);
+
+        constraints.gridx = 2;
+        constraints.gridy = 1;
+        JCheckBox showPasswordCheckBox = new JCheckBox("Show"); // Unicode for eye icon
+        showPasswordCheckBox.setFont(new Font("Arial", Font.PLAIN, 8));
+        showPasswordCheckBox.setForeground(Color.white);
+        showPasswordCheckBox.setOpaque(false);
+        showPasswordCheckBox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    passwordField.setEchoChar((char) 0); // Show password
+                } else {
+                    passwordField.setEchoChar('*'); // Hide password
+                }
+            }
+        });
+        registerPanel.add(showPasswordCheckBox, constraints);
+
+        // User Type Dropdown
+        constraints.gridx = 0;
+        constraints.gridy = 2;
+        registerPanel.add(new JLabel("User Type:"), constraints);
+        constraints.gridx = 1;
+        constraints.gridy = 2;
+        userTypeDropdown = new JComboBox<>(new String[]{"Student", "Teacher"});
         registerPanel.add(userTypeDropdown, constraints);
 
-        // Add a new JComboBox for subjects
-        subjectsDropdown = new JComboBox<>(
-                new String[] { "IM211", "CC214", "MS121", "PE3", "GE105", "GE106", "NET212", "ITELECTV", "GENSOC" });
-        subjectsDropdown.setEnabled(false); // Initially disabled
+        // Subjects Dropdown
         constraints.gridx = 0;
-        constraints.gridy = 5;
-        constraints.gridwidth = 2;
-
+        constraints.gridy = 3;
+        registerPanel.add(new JLabel("Subjects:"), constraints);
+        constraints.gridx = 1;
+        constraints.gridy = 3;
+        subjectsDropdown = new JComboBox<>(
+                new String[]{"IM211", "CC214", "MS121", "PE3", "GE105", "GE106", "NET212", "ITELECTV", "GENSOC"});
+        subjectsDropdown.setEnabled(false); // Initially disabled
         userTypeDropdown.addActionListener(event -> {
-            // Enable the subjects dropdown only if the user type is "Teacher"
             subjectsDropdown.setEnabled("Teacher".equals(userTypeDropdown.getSelectedItem()));
 
             // Fetch subjects already selected by other teachers
@@ -327,16 +469,18 @@ public class GradingSystem {
                 subjectsDropdown.removeItem(subject);
             }
         });
-
         registerPanel.add(subjectsDropdown, constraints);
 
         final JButton registerButton = new JButton("Register");
         registerButton.addActionListener(event -> {
             registerAction();
         });
-        registerPanel.add(registerButton);
+        constraints.gridx = 0;
+        constraints.gridy = 4;
+        constraints.gridwidth = 2;
+        registerPanel.add(registerButton, constraints);
 
-        registerDialog.add(registerPanel);
+        buttonPanel.add(registerPanel, BorderLayout.CENTER);
         registerDialog.setVisible(true);
     }
 
@@ -353,7 +497,7 @@ public class GradingSystem {
 
                     final ResultSet resultSet = searchStatement.executeQuery();
 
-                    final String[] columnNames = { "ID", "Name", selectedSubject };
+                    final String[] columnNames = {"ID", "Name", selectedSubject};
                     final DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
                         @Override
                         public boolean isCellEditable(final int row, final int column) {
@@ -363,10 +507,9 @@ public class GradingSystem {
 
                     while (resultSet.next()) {
                         final Object[] rowData = {
-                                resultSet.getInt("id"),
-                                resultSet.getString("name"),
-                                resultSet.getInt(selectedSubject.toLowerCase()),
-                        };
+                            resultSet.getInt("id"),
+                            resultSet.getString("name"),
+                            resultSet.getInt(selectedSubject.toLowerCase()),};
                         tableModel.addRow(rowData);
                     }
 
@@ -393,7 +536,7 @@ public class GradingSystem {
         };
 
         table.getTableHeader().setReorderingAllowed(false); // Disable column rearrangement
-        final int[] columnWidths = { 50, 100, 60 };
+        final int[] columnWidths = {50, 100, 60};
         for (int i = 0; i < columnWidths.length; i++) {
             table.getColumnModel().getColumn(i).setPreferredWidth(columnWidths[i]);
         }
@@ -413,7 +556,7 @@ public class GradingSystem {
                     .executeQuery("SELECT id, name, " + selectedSubject + " FROM students");
 
             // Create a table to display student information
-            final String[] columnNames = { "ID", "Name", selectedSubject };
+            final String[] columnNames = {"ID", "Name", selectedSubject};
             final DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
                 @Override
                 public boolean isCellEditable(final int row, final int column) {
@@ -423,10 +566,9 @@ public class GradingSystem {
 
             while (resultSet.next()) {
                 final Object[] rowData = {
-                        resultSet.getInt("id"),
-                        resultSet.getString("name"),
-                        resultSet.getInt(selectedSubject.toLowerCase()),
-                };
+                    resultSet.getInt("id"),
+                    resultSet.getString("name"),
+                    resultSet.getInt(selectedSubject.toLowerCase()),};
                 tableModel.addRow(rowData);
             }
 
@@ -459,7 +601,7 @@ public class GradingSystem {
 
             final JPanel buttonPanel = new JPanel();
             final JButton logoutButton = new JButton("Logout");
-            logoutButton.addActionListener(event -> logout());
+            logoutButton.addActionListener(event -> logoutAction());
             buttonPanel.add(logoutButton);
 
             final JButton editButton = new JButton("Edit Student");
@@ -498,8 +640,8 @@ public class GradingSystem {
             resultSet = statement
                     .executeQuery("SELECT * FROM students WHERE name = '" + nameField.getText() + "'");
 
-            final String[] columnNames = { "ID", "Name", "IM211", "CC214", "MS121", "PE3", "GE105", "GE106", "NET212",
-                    "ITELECTV", "GENSOC", "Average Grade", "Status" };
+            final String[] columnNames = {"ID", "Name", "IM211", "CC214", "MS121", "PE3", "GE105", "GE106", "NET212",
+                "ITELECTV", "GENSOC", "Average Grade", "Status"};
             final DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
                 @Override
                 public boolean isCellEditable(final int row, final int column) {
@@ -507,21 +649,22 @@ public class GradingSystem {
                 }
             };
 
+            // Get the informations
             while (resultSet.next()) {
                 final Object[] rowData = {
-                        resultSet.getInt("id"),
-                        resultSet.getString("name"),
-                        resultSet.getInt("IM211"),
-                        resultSet.getInt("CC214"),
-                        resultSet.getInt("MS121"),
-                        resultSet.getInt("PE3"),
-                        resultSet.getInt("GE105"),
-                        resultSet.getInt("GE106"),
-                        resultSet.getInt("NET212"),
-                        resultSet.getInt("ITELECTV"),
-                        resultSet.getInt("GENSOC"),
-                        resultSet.getInt("average_grade"),
-                        resultSet.getString("status")
+                    resultSet.getInt("id"),
+                    resultSet.getString("name"),
+                    resultSet.getInt("IM211"),
+                    resultSet.getInt("CC214"),
+                    resultSet.getInt("MS121"),
+                    resultSet.getInt("PE3"),
+                    resultSet.getInt("GE105"),
+                    resultSet.getInt("GE106"),
+                    resultSet.getInt("NET212"),
+                    resultSet.getInt("ITELECTV"),
+                    resultSet.getInt("GENSOC"),
+                    resultSet.getInt("average_grade"),
+                    resultSet.getString("status")
                 };
                 tableModel.addRow(rowData);
             }
@@ -533,7 +676,7 @@ public class GradingSystem {
             };
 
             table.getTableHeader().setReorderingAllowed(false); // Disable column rearrangement
-            final int[] columnWidths = { 50, 100, 60, 60, 60, 60, 60, 60, 60, 80, 60, 100, 80 };
+            final int[] columnWidths = {50, 100, 60, 60, 60, 60, 60, 60, 60, 80, 60, 100, 80};
             for (int i = 0; i < columnWidths.length; i++) {
                 table.getColumnModel().getColumn(i).setPreferredWidth(columnWidths[i]);
             }
@@ -545,7 +688,7 @@ public class GradingSystem {
             final JPanel buttonPanel = new JPanel();
 
             final JButton logoutButton = new JButton("Logout");
-            logoutButton.addActionListener(event -> logout());
+            logoutButton.addActionListener(event -> logoutAction());
             buttonPanel.add(logoutButton);
             final JButton deleteAccountButton = new JButton("Delete Account");
             deleteAccountButton.addActionListener(event -> deleteStudentAccount());
@@ -612,19 +755,30 @@ public class GradingSystem {
                 final int result = JOptionPane.showConfirmDialog(frame, panel, "Edit Student",
                         JOptionPane.OK_CANCEL_OPTION);
                 if (result == JOptionPane.OK_OPTION) {
+
                     // Obtain individual grades from text fields for update
-                    final int im211 = Integer.parseInt(im211Field.getText());
-                    final int cc214 = Integer.parseInt(cc214Field.getText());
-                    final int ms121 = Integer.parseInt(ms121Field.getText());
-                    final int pe3 = Integer.parseInt(pe3Field.getText());
-                    final int ge105 = Integer.parseInt(ge105Field.getText());
-                    final int ge106 = Integer.parseInt(ge106Field.getText());
-                    final int net212 = Integer.parseInt(net212Field.getText());
-                    final int itelectv = Integer.parseInt(itelectvField.getText());
-                    final int gensoc = Integer.parseInt(gensocField.getText());
+                    final int im211 = parseGrade(im211Field);
+                    final int cc214 = parseGrade(cc214Field);
+                    final int ms121 = parseGrade(ms121Field);
+                    final int pe3 = parseGrade(pe3Field);
+                    final int ge105 = parseGrade(ge105Field);
+                    final int ge106 = parseGrade(ge106Field);
+                    final int net212 = parseGrade(net212Field);
+                    final int itelectv = parseGrade(itelectvField);
+                    final int gensoc = parseGrade(gensocField);
                     final int averageGrade = (im211 + cc214 + ms121 + pe3 + ge105 + ge106 + net212 + itelectv + gensoc)
                             / totalSubjects;
                     final String status = (averageGrade < 75) ? "Failed" : "Passed";
+
+                    if (!isValidGradeRange(im211) || !isValidGradeRange(cc214)
+                            || !isValidGradeRange(ms121)
+                            || !isValidGradeRange(pe3) || !isValidGradeRange(ge105) || !isValidGradeRange(ge106)
+                            || !isValidGradeRange(net212) || !isValidGradeRange(itelectv) || !isValidGradeRange(gensoc)) {
+                        JOptionPane.showMessageDialog(frame, "Please enter a valid grade", "Error",
+                                JOptionPane.ERROR_MESSAGE);
+                        editStudent(studentId);
+                        return;
+                    }
 
                     final PreparedStatement preparedStatement = connection.prepareStatement(
                             "UPDATE students SET IM211 = ?, CC214 = ?, MS121 = ?, PE3 = ?, GE105 = ?, GE106 = ?, NET212 = ?, ITELECTV = ?, GENSOC = ?, average_grade = ?, status = ? WHERE id = ?");
@@ -640,16 +794,6 @@ public class GradingSystem {
                     preparedStatement.setInt(10, averageGrade);
                     preparedStatement.setString(11, status);
                     preparedStatement.setInt(12, studentId);
-
-                    if (!isValidGradeRange(im211) || !isValidGradeRange(cc214)
-                            || !isValidGradeRange(ms121) ||
-                            !isValidGradeRange(pe3) || !isValidGradeRange(ge105) || !isValidGradeRange(ge106) ||
-                            !isValidGradeRange(net212) || !isValidGradeRange(itelectv) || !isValidGradeRange(gensoc)) {
-                        JOptionPane.showMessageDialog(frame, "Please enter a valid grade", "Error",
-                                JOptionPane.ERROR_MESSAGE);
-                        editStudent(studentId);
-                        return;
-                    }
 
                     final int rowsAffected = preparedStatement.executeUpdate();
                     if (rowsAffected > 0) {
@@ -669,6 +813,21 @@ public class GradingSystem {
         }
     }
 
+    private int parseGrade(JTextField textField) throws NumberFormatException {
+        String text = textField.getText().trim();
+        int grade;
+        if (text.isEmpty()) {
+            throw new NumberFormatException("Empty input");
+        }
+
+        try {
+            grade = Integer.parseInt(text);
+        } catch (NumberFormatException e) {
+            return -1; // return an invalid grade to ask again
+        }
+        return grade;
+    }
+
     private void confirmExit() {
         final int option = JOptionPane.showConfirmDialog(null, "Are you sure you want to exit?", "Exit",
                 JOptionPane.YES_NO_OPTION);
@@ -678,7 +837,7 @@ public class GradingSystem {
         }
     }
 
-    private void logout() {
+    private void logoutAction() {
         // Clear name and password fields
         nameField.setText("");
         passwordField.setText("");
@@ -698,9 +857,13 @@ public class GradingSystem {
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
-
+    
+    // Check if it's between 50 to 100
     private boolean isValidGradeRange(final double grade) {
         return grade >= 50 && grade <= 100;
+    }
+    private boolean isValidLength(final String password) {
+        return password.length() > 6;
     }
 
     private boolean isInvalidName(final String name) {
@@ -738,7 +901,7 @@ public class GradingSystem {
                             JOptionPane.INFORMATION_MESSAGE);
 
                     // After deleting the account, log out
-                    logout();
+                    logoutAction();
                 } else {
                     JOptionPane.showMessageDialog(frame, "Failed to delete account", "Error",
                             JOptionPane.ERROR_MESSAGE);
@@ -750,8 +913,8 @@ public class GradingSystem {
     }
 
     private String getSubjectCode(final int index) {
-        final String[] subjectCodes = { "IM211", "CC214", "MS121", "PE3", "GE105", "GE106", "NET212", "ITELECTV",
-                "GENSOC" };
+        final String[] subjectCodes = {"IM211", "CC214", "MS121", "PE3", "GE105", "GE106", "NET212", "ITELECTV",
+            "GENSOC"};
         return subjectCodes[index];
     }
 
@@ -791,7 +954,7 @@ public class GradingSystem {
                             JOptionPane.INFORMATION_MESSAGE);
 
                     // After deleting the account, log out
-                    logout();
+                    logoutAction();
                 } else {
                     JOptionPane.showMessageDialog(frame, "Failed to delete account", "Error",
                             JOptionPane.ERROR_MESSAGE);
