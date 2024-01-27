@@ -1,5 +1,3 @@
-package System;
-
 /*
 CREATE DATABASE grading_system;
 
